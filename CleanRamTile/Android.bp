@@ -1,0 +1,22 @@
+/*
+ * SPDX-FileCopyrightText: 2026 The DerpFest Project
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+android_app {
+    name: "CleanRamTile",
+
+    srcs: ["src/**/*.java"],
+    resource_dirs: ["res"],
+
+    manifest: "AndroidManifest.xml",
+
+    platform_apis: true,
+    certificate: "platform",
+    privileged: true,
+    privapp_allowlist: "com.derp.cleanram.xml",
+
+    optimize: {
+        enabled: false,
+    },
+}

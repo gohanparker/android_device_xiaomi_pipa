@@ -30,3 +30,14 @@ service xiaomi-keyboard /vendor/bin/xiaomi-keyboard
 
 on property:persist.vendor.parts.pen=*
     start xiaomi-pen
+
+# Clean-RAM background defaults (standby buckets are runtime state)
+on property:sys.boot_completed=1
+    start cleanram_boot
+
+service cleanram_boot /system/bin/cleanram_boot.sh
+    class main
+    user system
+    group system
+    oneshot
+    disabled

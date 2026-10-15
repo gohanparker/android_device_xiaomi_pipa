@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     SPDX-FileCopyrightText: 2026 The DerpFest Project
+     SPDX-License-Identifier: Apache-2.0
+-->
+<permissions>
+    <privapp-permissions package="com.derp.cleanram">
+        <permission name="android.permission.FORCE_STOP_PACKAGES"/>
+    </privapp-permissions>
+</permissions>

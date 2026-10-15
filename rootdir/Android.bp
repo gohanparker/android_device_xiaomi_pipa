@@ -11,3 +11,10 @@ prebuilt_etc {
     sub_dir: "init/hw",
     vendor: true,
 }
+
+// Clean-RAM first-boot defaults script (installed executable to /system/bin)
+sh_binary {
+    name: "cleanram_boot",
+    src: "etc/cleanram_boot.sh",
+    filename: "cleanram_boot.sh",
+}

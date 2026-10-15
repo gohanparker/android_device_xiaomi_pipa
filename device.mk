@@ -42,6 +42,14 @@ DEVICE_PACKAGE_OVERLAYS += \
 # Peripheral Manager
 PRODUCT_PACKAGES += \
 
+# Clean RAM quick settings tile (force-stop background hogs)
+PRODUCT_PACKAGES += \
+    CleanRamTile
+
+# Systemwide adblock hosts (StevenBlack unified, refresh before build)
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/hosts:$(TARGET_COPY_OUT_SYSTEM)/etc/hosts
+
 # Permissions
 PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/handheld_core_hardware.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/handheld_core_hardware.xml
@@ -52,7 +60,8 @@ PRODUCT_COPY_FILES += \
 
 # Rootdir
 PRODUCT_PACKAGES += \
-    init.device.rc
+    init.device.rc \
+    cleanram_boot
 
 # Shipping API level
 PRODUCT_SHIPPING_API_LEVEL := 30
