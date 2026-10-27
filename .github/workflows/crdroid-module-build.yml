@@ -34,8 +34,8 @@ jobs:
 
       - name: Init + generate local manifest
         run: |
-          mkdir -p /work
-          cd /work
+          mkdir -p "$HOME/romwork"
+          cd "$HOME/romwork"
           repo init -u https://github.com/crdroidandroid/android.git -b 16.0 2>&1 | tail -n 2
           mkdir -p .repo/local_manifests
           python3 "$GITHUB_WORKSPACE/gh-script/.github/scripts/gen_local_manifest.py" "$PWD" > .repo/local_manifests/zz-pipa.xml
@@ -44,7 +44,7 @@ jobs:
 
       - name: Sync tree (retry on transient failure)
         run: |
-          cd /work
+          cd "$HOME/romwork"
           repo sync -c -j4 --no-clone-bundle --no-tags 2>&1 | tail -n 4 || \
             (echo retrying; repo sync -c -j2 --no-clone-bundle --no-tags 2>&1 | tail -n 4)
           df -h /
@@ -52,7 +52,7 @@ jobs:
       - name: Build CleanRamTile
         id: build
         run: |
-          cd /work
+          cd "$HOME/romwork"
           source build/envsetup.sh >/dev/null
           lunch lineage_pipa-bp4a-userdebug
           m -j4 CleanRamTile 2>&1 | tail -n 20
