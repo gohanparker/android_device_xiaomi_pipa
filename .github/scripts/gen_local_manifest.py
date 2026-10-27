@@ -58,6 +58,11 @@ EXCLUDE = [
     "test/*",
 ]
 
+paths_by_name = {}
+for name, path in projects:
+    if name:
+        paths_by_name.setdefault(name, []).append(path)
+
 excluded = set()
 for name, path in projects:
     if not name:
@@ -81,8 +86,12 @@ ADD = [
 
 lines = ['<?xml version="1.0" encoding="UTF-8"?>', "<manifest>"]
 lines.append('  <remote name="extra" fetch="https://github.com/" />')
+removed = 0
 for name in sorted(excluded):
-    lines.append(f'  <remove-project name="{name}" />')
+    if name and len(paths_by_name.get(name, [])) == 1:
+        lines.append(f'  <remove-project name="{name}" />')
+        removed += 1
+print(f"remove-projects emitted: {removed}/{len(excluded)}", file=sys.stderr)
 for path, name, rev in ADD:
     lines.append(f'  <project path="{path}" name="{name}" remote="extra" revision="{rev}" />')
 lines.append("</manifest>")
