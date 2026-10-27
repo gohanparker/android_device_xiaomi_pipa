@@ -1,18 +1,52 @@
 #!/usr/bin/env python3
 """Generate a local_manifest for building crDroid pipa on the GHA runner.
 
-Reads the crDroid manifest initialized under <base>/.repo, excludes projects
-not needed for a pipa system build, and adds the pipa device/kernel/vendor
-repos (including substitutions for repos that died upstream).
+Resolves the repo manifest include-graph from <base>/.repo/manifest.xml so
+only LIVE projects (those actually merged) are considered; excludes the ones
+a pipa system build never needs; and adds the pipa device/kernel/vendor repos.
 """
-import fnmatch, glob, os, sys
+import fnmatch, os, sys
 import xml.etree.ElementTree as ET
 
 base = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else ".")
-mfiles = sorted(
-    glob.glob(os.path.join(base, ".repo/manifests/*.xml"))
-    + glob.glob(os.path.join(base, ".repo/manifests/snippets/*.xml"))
-)
+mdir = os.path.join(base, ".repo", "manifests")
+
+
+def resolve_includes(start):
+    """Traverse <include name=...> from `start` (repo resolves includes
+    relative to the manifests directory, wherever the root file lives)."""
+    seen, order, queue = set(), [], [start]
+    while queue:
+        f = queue.pop(0)
+        rf = os.path.realpath(f)
+        if rf in seen or not os.path.exists(rf):
+            continue
+        seen.add(rf)
+        order.append(rf)
+        try:
+            root = ET.parse(rf).getroot()
+        except Exception:
+            continue
+        for el in root:
+            if el.tag == "include":
+                nm = el.get("name")
+                if nm:
+                    tgt = os.path.join(mdir, nm)
+                    if not os.path.exists(tgt):
+                        tgt = os.path.join(os.path.dirname(rf), nm)
+                    queue.append(tgt)
+    return order
+
+
+root_candidates = [
+    os.path.join(base, ".repo", "manifest.xml"),
+    os.path.join(mdir, "manifest.xml"),
+]
+root_file = next((c for c in root_candidates if os.path.exists(c)), None)
+if not root_file:
+    sys.exit("no root manifest found")
+mfiles = resolve_includes(root_file)
+print(f"merged-manifest files: {len(mfiles)}", file=sys.stderr)
 
 remotes = {}
 default_remote = None
@@ -40,7 +74,6 @@ for f in mfiles:
 
 # Path patterns not needed for the pipa build
 EXCLUDE = [
-    "kernel/platform/*",               # 156 GKI kernel-build trees (other devices)
     "device/google*",
     "device/generic/*",
     "device/lineage/*",
@@ -86,13 +119,15 @@ ADD = [
 
 lines = ['<?xml version="1.0" encoding="UTF-8"?>', "<manifest>"]
 lines.append('  <remote name="extra" fetch="https://github.com/" />')
-removed = 0
+removed, skipped = 0, 0
 for name in sorted(excluded):
     if name and len(paths_by_name.get(name, [])) == 1:
         lines.append(f'  <remove-project name="{name}" />')
         removed += 1
-print(f"remove-projects emitted: {removed}/{len(excluded)}", file=sys.stderr)
+    else:
+        skipped += 1
 for path, name, rev in ADD:
     lines.append(f'  <project path="{path}" name="{name}" remote="extra" revision="{rev}" />')
 lines.append("</manifest>")
+print(f"projects={len(projects)} excluded={len(excluded)} emitted={removed} skipped-ambiguous={skipped}", file=sys.stderr)
 print("\n".join(lines))
