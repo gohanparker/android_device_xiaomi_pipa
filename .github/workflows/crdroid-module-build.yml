@@ -26,7 +26,7 @@ jobs:
       - name: Install build deps
         run: |
           sudo apt-get update
-          sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git git-lfs gnupg gperf imagemagick lib32readline-dev lib32z1-dev libfl-dev libc6-dev-i386 libelf-dev liblz4-tool libncurses5 libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xdg-utils xxd zip zlib1g-dev
+          sudo apt-get install -y bc bison ccache curl flex git git-lfs gnupg gperf rsync squashfs-tools unzip zip libelf-dev libssl-dev libxml2-utils zlib1g-dev libncurses-dev
           sudo curl -sL -o /usr/local/bin/repo https://storage.googleapis.com/git-repo-downloads/repo
           sudo chmod a+rx /usr/local/bin/repo
           git config --global user.name "gha"
