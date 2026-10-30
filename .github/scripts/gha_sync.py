@@ -11,6 +11,7 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import manifest_data as MD  # noqa: E402
@@ -23,12 +24,19 @@ def run(cmd, cwd=None, env=None, timeout=1800):
         return subprocess.CompletedProcess(cmd, 124, e.stdout or "", e.stderr or "")
 
 
-def clone_one(entry, root, attempts=2):
+def clone_one(entry, root, attempts=3):
     path, _name, url, rev_b, kind = entry
     dst = os.path.join(root, path)
     os.makedirs(os.path.dirname(dst), exist_ok=True)
     out = []
     for attempt in range(1, attempts + 1):
+        if attempt > 1:
+            # back off harder on server-side throttling (googlesource 429s
+            # surface as "expected flush after ref listing")
+            throttled = any(("429" in x or "flush" in x) for x in out)
+            delay = 45 * (attempt - 1) if throttled else 8 * (attempt - 1)
+            print(f"  retry {attempt}/{attempts} in {delay}s: {path}", flush=True)
+            time.sleep(delay)
         if os.path.exists(os.path.join(dst, ".git")) or os.path.exists(os.path.join(dst, "Android.bp")):
             return (path, "cached-ok", out)
         cmd = ["git", "clone", "--depth=1", "--single-branch", "--no-checkout"]
