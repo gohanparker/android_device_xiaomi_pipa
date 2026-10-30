@@ -85,6 +85,23 @@ EXCLUDE = [
     "prebuilts/devtools*",
     "prebuilts/ndk*",
     "prebuilts/gcc/*mingw*",
+    "prebuilts/qemu-kernel*",           # emulator-only
+    "prebuilts/android-emulator*",
+    "prebuilts/jdk/jdk8",
+    "prebuilts/jdk/jdk25",
+    "prebuilts/go/linux-x86",           # no go-based host tooling needed
+    "cts",                              # platform CTS: multi-GB, unused by pipa
+    "pdk/*",
+    "developers/*",
+    "hardware/qcom-caf/sm7*",           # other SoCs' HALs (big)
+    "hardware/qcom-caf/sm83*",
+    "hardware/qcom-caf/sm84*",
+    "hardware/qcom-caf/sm85*",
+    "hardware/qcom-caf/sm86*",
+    "hardware/qcom-caf/sm87*",
+    "hardware/qcom-caf/sm88*",
+    "hardware/qcom-caf/qcm*",
+    "hardware/qcom-caf/msm*",
     "external/chromium-webview/prebuilt/arm",
     "external/chromium-webview/prebuilt/x86",
     "external/chromium-webview/prebuilt/x86_64",
