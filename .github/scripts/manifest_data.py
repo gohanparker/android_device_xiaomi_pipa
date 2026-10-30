@@ -72,7 +72,7 @@ ADD = [
     ("vendor/xiaomi/pipa", "crdroidandroid/android_vendor_xiaomi_pipa", "16.0"),
     ("vendor/xiaomi/sm8250-common", "crdroidandroid/proprietary_vendor_xiaomi_sm8250-common", "16.0-pipa"),
     ("kernel/xiaomi/sm8250", "crdroidandroid/android_kernel_xiaomi_sm8250", "16.0-pipa"),
-    ("hardware/xiaomi", "crdroidandroid/android_hardware_xiaomi", "16.0"),
+    ("hardware/xiaomi", "gohanparker/android_hardware_xiaomi", "16.0"),
     ("vendor/qcom/wfd", "Evolution-X-Devices/vendor_qcom_wfd", "bka"),
     ("device/qcom/wfd", "Evolution-X-Devices/device_qcom_wfd", "bka"),
 ]
