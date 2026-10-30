@@ -8,6 +8,7 @@ each clone so the runner's 106 GB disk never has to hold objects AND trees.
 import argparse
 import concurrent.futures as cf
 import os
+import shutil
 import subprocess
 import sys
 
@@ -15,8 +16,11 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import manifest_data as MD  # noqa: E402
 
 
-def run(cmd, cwd=None):
-    return subprocess.run(cmd, cwd=cwd, capture_output=True, text=True)
+def run(cmd, cwd=None, env=None, timeout=1800):
+    try:
+        return subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, env=env, timeout=timeout)
+    except subprocess.TimeoutExpired as e:
+        return subprocess.CompletedProcess(cmd, 124, e.stdout or "", e.stderr or "")
 
 
 def clone_one(entry, root, attempts=2):
@@ -38,21 +42,31 @@ def clone_one(entry, root, attempts=2):
             continue
         if kind == "sha":
             # fetch the exact commit needed; blobless depth fetch won't do
-            r2 = run(["git", "-C", dst, "fetch", "--depth=1", url, rev])
+            r2 = run(["git", "-C", dst, "fetch", "--depth=1", url, rev_b])
             if r2.returncode != 0:
                 out.append("sha-fetch: " + (r2.stderr.strip().splitlines()[-1] if r2.stderr.strip() else "?"))
                 run(["rm", "-rf", dst])
                 continue
-            r2b = run(["git", "-C", dst, "checkout", "-f", "--detach", rev])
+            r2b = run(["git", "-C", dst, "checkout", "-f", "--detach", rev_b],
+                      env={**os.environ, "GIT_LFS_SKIP_SMUDGE": "1"})
             if r2b.returncode != 0:
                 out.append("sha-checkout: " + r2b.stderr.strip().splitlines()[-1])
                 run(["rm", "-rf", dst])
                 continue
-        r3 = run(["git", "-C", dst, "checkout", "-f", "--force"])
+        r3 = run(["git", "-C", dst, "checkout", "-f", "--force"],
+                 env={**os.environ, "GIT_LFS_SKIP_SMUDGE": "1"})
         if r3.returncode != 0 and kind == "ref":
             out.append("checkout: " + r3.stderr.strip().splitlines()[-1])
             run(["rm", "-rf", dst])
             continue
+        if shutil.which("git-lfs"):
+            # LFS-tracked files (e.g. chromium webview apk): skip-smudge above
+            # left pointer files; pull real objects now, before .git is gone
+            r4 = run(["git", "-C", dst, "lfs", "pull"])
+            if r4.returncode != 0:
+                out.append("lfs-pull: " + (r4.stderr.strip().splitlines()[-1] if r4.stderr.strip() else "rc!=0"))
+                run(["rm", "-rf", dst])
+                continue
         run(["rm", "-rf", os.path.join(dst, ".git")])   # drop pack: tree-only
         return (path, "ok", out)
     return (path, "FAIL", out)
