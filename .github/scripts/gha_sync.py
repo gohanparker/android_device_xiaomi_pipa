@@ -99,6 +99,31 @@ def main():
                 print(f"{i}/{len(entries)} synced ({ok} ok, {len(failed)} failed)"
                       + (f" -- {path}: {out}" if failed else ""), flush=True)
 
+    # repo also materialises <linkfile>/<copyfile> entries after syncing;
+    # reproduce them (relative symlinks / copies) so the tree is build-ready
+    applied, skipped = 0, []
+    for kind, proj, src, dest in MD.links(args.root):
+        s = os.path.join(args.root, proj, src)
+        d = os.path.join(args.root, dest)
+        if not os.path.exists(s):
+            skipped.append(f"{kind} {proj}/{src} -> {dest}")
+            continue
+        parent = os.path.dirname(d)
+        os.makedirs(parent, exist_ok=True)
+        if os.path.lexists(d):
+            if os.path.isdir(d) and not os.path.islink(d):
+                shutil.rmtree(d)
+            else:
+                os.remove(d)
+        if kind == "copyfile":
+            shutil.copy2(s, d)
+        else:
+            os.symlink(os.path.relpath(s, parent), d)
+        applied += 1
+    print(f"linkfiles/copyfiles: {applied} applied, {len(skipped)} skipped", file=sys.stderr)
+    for x in skipped[:10]:
+        print(f"  skip (src pruned): {x}", file=sys.stderr)
+
     if failed:
         print(f"FAILED ({len(failed)}):", file=sys.stderr)
         for path, out in failed[:40]:

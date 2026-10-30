@@ -138,6 +138,11 @@ def parse_merged(base):
                 _, rrev = remotes.get(remote, (None, None))
                 rev = el.get("revision") or rrev or d_rev
                 rec = {"name": name, "path": path, "remote": remote, "revision": rev}
+                for child in el:                    # repo linkfile/copyfile support
+                    if child.tag in ("linkfile", "copyfile"):
+                        src, dest = child.get("src"), child.get("dest")
+                        if src and dest:
+                            rec.setdefault("links", []).append((child.tag, src, dest))
                 if path in pos:
                     projects[pos[path]] = rec       # later merge wins
                 else:
@@ -192,3 +197,18 @@ def collect(base):
         out[path] = (name, f"{GITHUB}/{name}.git", rev, kind)
 
     return [(path,) + out[path] for path in sorted(out)]
+
+
+def links(base):
+    """repo-style <linkfile>/<copyfile> entries: [(kind, proj_path, src, dest)].
+
+    repo materialises these after syncing (relative symlinks / copies); a
+    plain-clone syncer must reproduce them or staples such as
+    build/envsetup.sh (a symlink to build/make/envsetup.sh) never exist and
+    every build step fails at `source build/envsetup.sh`.
+    """
+    out = []
+    for p in parse_merged(base)["projects"]:
+        for kind, src, dest in p.get("links", []):
+            out.append((kind, p["path"], src, dest))
+    return out
