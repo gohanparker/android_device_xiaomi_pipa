@@ -32,25 +32,17 @@ jobs:
           git config --global user.name "gha"
           git config --global user.email "gha@users.noreply.github.com"
 
-      - name: Init + generate local manifest
+      - name: Init manifests (repo init only - no project sync)
         run: |
           mkdir -p "$HOME/romwork"
           cd "$HOME/romwork"
           repo init -u https://github.com/crdroidandroid/android.git -b 16.0 --depth=1 2>&1 | tail -n 2
-          mkdir -p .repo/local_manifests
-          python3 "$GITHUB_WORKSPACE/gh-script/.github/scripts/gen_local_manifest.py" "$PWD" > .repo/local_manifests/zz-pipa.xml
-          head -n 6 .repo/local_manifests/zz-pipa.xml
-          grep -c "remove-project" .repo/local_manifests/zz-pipa.xml || true
 
-      - name: Sync tree (retry on transient failure)
+      - name: Sync tree (plain clones, tree-only)
         run: |
           cd "$HOME/romwork"
           set -o pipefail
-          if ! repo sync -c -j8 --no-tags 2>&1 | tee /tmp/sync.log; then
-            echo "retrying - last lines:"
-            tail -n 12 /tmp/sync.log
-            repo sync -c -j8 --no-tags 2>&1 | tee /tmp/sync.log
-          fi
+          python3 "$GITHUB_WORKSPACE/gh-script/.github/scripts/gha_sync.py" --root "$PWD" -j 8 2>&1 | tee /tmp/sync.log
           tail -n 8 /tmp/sync.log
           df -h /
 
