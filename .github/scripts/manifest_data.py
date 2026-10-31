@@ -33,7 +33,6 @@ def resolve_fetch(fetch):
 EXCLUDE = [
     "device/google*",
     "device/generic/*",
-    "device/lineage/*",
     "device/sample",
     "packages/apps/Car*",
     "packages/modules/desktop*",
@@ -56,9 +55,6 @@ EXCLUDE = [
     "hardware/qcom-caf/sm88*",
     "hardware/qcom-caf/qcm*",
     "hardware/qcom-caf/msm*",
-    "external/chromium-webview/prebuilt/arm",
-    "external/chromium-webview/prebuilt/x86",
-    "external/chromium-webview/prebuilt/x86_64",
     "test/*",
 ]
 
