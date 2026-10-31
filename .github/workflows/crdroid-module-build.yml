@@ -47,23 +47,56 @@ jobs:
           tail -n 8 /tmp/sync.log
           df -h /
 
-      - name: Build CleanRamTile
+      - name: Build CleanRamTile (two-phase: analyse, free disk, compile)
         id: build
         run: |
           cd "$HOME/romwork"
           source build/envsetup.sh >/dev/null
           lunch lineage_pipa-bp4a-userdebug
           set -o pipefail
-          m -j4 CleanRamTile 2>&1 | tee /tmp/build.log | tail -n 40
+
+          echo "--- phase 1: soong analysis (needs the full tree) ---"
+          df -h / | tail -n 1
+          m --skip-ninja CleanRamTile 2>&1 | tee /tmp/analysis.log | tail -n 30
+          COMBINED="$(ls out/combined*.ninja 2>/dev/null | head -n 1)"
+          echo "combined ninja: $COMBINED"
+
+          echo "--- phase 2: free disk (unused by a single app module) ---"
+          rm -rf cts test platform_testing pdk developers device/google device/generic \
+                 device/sample packages/apps/Car prebuilts/android-emulator \
+                 hardware/qcom-caf/msm8953 hardware/qcom-caf/msm8996 hardware/qcom-caf/msm8998 \
+                 hardware/qcom-caf/sdm660 hardware/qcom-caf/sdm845 hardware/qcom-caf/sm8150 \
+                 hardware/qcom-caf/sm8350 hardware/qcom-caf/sm8450 hardware/qcom-caf/sm8450-6.6 \
+                 hardware/qcom-caf/sm8550 hardware/qcom-caf/sm8650 hardware/qcom-caf/sm8750
+          df -h / | tail -n 1
+
+          echo "--- phase 3: compile with ninja (no re-analysis) ---"
+          prebuilts/build-tools/linux-x86/bin/ninja -f "$COMBINED" -j3 CleanRamTile 2>&1 | tee /tmp/build.log | tail -n 40
           echo "--- disk/mem after build:"
-          df -h /; free -h
+          df -h / | tail -n 1; free -h | head -n 2
+
           APK="$(find out -name 'CleanRamTile.apk' -print | head -n 1)"
           if [ -z "$APK" ]; then echo "APK not found in out/"; exit 1; fi
           cp "$APK" "$GITHUB_WORKSPACE/CleanRamTile.apk"
           echo "apk=$APK" >> "$GITHUB_OUTPUT"
 
+      - name: Collect logs (always)
+        if: always()
+        run: |
+          cp /tmp/analysis.log "$GITHUB_WORKSPACE/analysis.log" 2>/dev/null || true
+          cp /tmp/build.log "$GITHUB_WORKSPACE/build.log" 2>/dev/null || true
+          cp /tmp/sync.log "$GITHUB_WORKSPACE/sync.log" 2>/dev/null || true
+          ls -la "$GITHUB_WORKSPACE" | head -n 15
+          df -h / | tail -n 1
+
       - name: Upload artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: CleanRamTile
-          path: CleanRamTile.apk
+          path: |
+            CleanRamTile.apk
+            analysis.log
+            build.log
+            sync.log
+          if-no-files-found: ignore
