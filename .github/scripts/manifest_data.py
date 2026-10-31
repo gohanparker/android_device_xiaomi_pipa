@@ -37,16 +37,13 @@ EXCLUDE = [
     "device/sample",
     "packages/apps/Car*",
     "packages/modules/desktop*",
-    "prebuilts/go/darwin*",
-    "prebuilts/go/linux-x86",           # no go-based host tooling needed
+    "prebuilts/go/darwin*",             # keep go/linux-x86: microfactory/kati need Go
     "prebuilts/clang/host/darwin*",
     "prebuilts/devtools*",
     "prebuilts/ndk*",
     "prebuilts/gcc/*mingw*",
     "prebuilts/qemu-kernel*",           # emulator-only
     "prebuilts/android-emulator*",
-    "prebuilts/jdk/jdk8",
-    "prebuilts/jdk/jdk25",
     "cts",                              # platform CTS: multi-GB, unused by pipa
     "pdk/*",
     "developers/*",
