@@ -10,6 +10,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 355
+    permissions:
+      contents: write          # heartbeat pushes to the ci-hb branch
     steps:
       - name: Maximize disk + create swap
         run: |
@@ -55,16 +57,24 @@ jobs:
           lunch lineage_pipa-bp4a-userdebug
           set -o pipefail
 
-          # lighter/steadier analysis: no ABI-dump generation, ccache inside the tree
+          # lighter/steadier analysis: tolerate missing modules, skip ABI dumps,
+          # keep ccache inside the tree
+          export ALLOW_MISSING_DEPENDENCIES=true
           export SKIP_ABI_CHECKS=true
           export CCACHE_DIR="$HOME/romwork/.ccache"
           mkdir -p "$CCACHE_DIR"
           ccache -M 5G >/dev/null 2>&1 || true
 
-          # heartbeat: resource curve stays visible in the job log even if the VM dies
+          # heartbeat: printed to the job log AND pushed to the ci-hb branch, so the
+          # resource curve survives even a hard VM death
+          HB_REPO="$GITHUB_WORKSPACE/gh-script"
           ( while true; do sleep 30; \
-              echo "[hb $(date -u +%H:%M:%S)] disk=$(df -h / | tail -1 | awk '{print $4}') mem=$(free -m | awk 'NR==2{print $7"MB"}') load=$(cut -d' ' -f1 /proc/loadavg)"; \
-              ps -eo rss,comm --sort=-rss | head -4 | tail -3; \
+              { echo "time $(date -u +%H:%M:%S)"; df -h / | tail -1; free -m | head -2; \
+                ps -eo rss,comm --sort=-rss | head -6; } > "$HB_REPO/.hb" 2>/dev/null; \
+              echo "[hb $(date -u +%H:%M:%S)] disk=$(df -h / | tail -1 | awk '{print $4}') mem=$(free -m | awk 'NR==2{print $7"MB"}')"; \
+              git -C "$HB_REPO" add .hb >/dev/null 2>&1; \
+              git -C "$HB_REPO" commit -q -m hb >/dev/null 2>&1; \
+              git -C "$HB_REPO" push -q -f origin HEAD:ci-hb >/dev/null 2>&1; \
             done ) &
           HB=$!
 

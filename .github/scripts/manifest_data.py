@@ -31,27 +31,40 @@ def resolve_fetch(fetch):
 
 # Path patterns not needed for the pipa build (disk-pressure trims)
 EXCLUDE = [
-    "device/google/atv",
-    "device/google/contexthub",
-    "device/google/cuttlefish_prebuilts",   # 190M, cuttlefish scripts only
-    "device/google/cuttlefish_vmm",         # 1.7G, crosvm/vmm products only
-    "device/google/trout",
-    "packages/modules/desktop*",
-    "prebuilts/go/darwin*",             # keep go/linux-x86: microfactory/kati need Go
-    "prebuilts/clang/host/darwin*",
-    "prebuilts/gcc/darwin*",            # keep mingw: defines libwinpthread, referenced by host variants
-    "prebuilts/qemu-kernel*",           # emulator-only
-    "pdk/*",
-    "developers/*",
-    "hardware/qcom-caf/sm7*",           # other SoCs' HALs (big)
+    # other SoCs' HALs - pipa is sm8250; soong tolerates the missing modules
+    "hardware/qcom-caf/sm7*",
+    "hardware/qcom-caf/sm81*",
     "hardware/qcom-caf/sm83*",
     "hardware/qcom-caf/sm84*",
     "hardware/qcom-caf/sm85*",
     "hardware/qcom-caf/sm86*",
     "hardware/qcom-caf/sm87*",
     "hardware/qcom-caf/sm88*",
+    "hardware/qcom-caf/sdm*",
     "hardware/qcom-caf/qcm*",
     "hardware/qcom-caf/msm*",
+    # other devices, emulation and sample configs
+    "device/google*",
+    "device/generic/*",
+    "device/sample",
+    # test infrastructure - only referenced by test modules
+    "cts",
+    "test/*",
+    "platform_testing",
+    "packages/apps/Car*",
+    "packages/modules/desktop*",
+    # host/emulator prebuilts irrelevant to a linux-x86 device build
+    "prebuilts/go/darwin*",             # keep go/linux-x86: microfactory/kati need Go
+    "prebuilts/clang/host/darwin*",
+    "prebuilts/gcc/darwin*",
+    "prebuilts/gcc/*mingw*",
+    "prebuilts/devtools*",
+    "prebuilts/ndk*",
+    "prebuilts/qemu-kernel*",
+    "prebuilts/android-emulator*",
+    # legacy trees
+    "pdk/*",
+    "developers/*",
 ]
 
 # (path, name, revision) - GitHub-hosted pipa device set, overrides manifest
