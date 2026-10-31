@@ -117,7 +117,11 @@ def main():
             skipped.append(f"{kind} {proj}/{src} -> {dest}")
             continue
         parent = os.path.dirname(d)
-        os.makedirs(parent, exist_ok=True)
+        if not os.path.isdir(parent):
+            # dest sits inside a pruned project dir (e.g. an unused SoC tree);
+            # don't create stray links that soong would then parse
+            skipped.append(f"{kind} {proj}/{src} -> {dest} (parent pruned)")
+            continue
         if os.path.lexists(d):
             if os.path.isdir(d) and not os.path.islink(d):
                 shutil.rmtree(d)
