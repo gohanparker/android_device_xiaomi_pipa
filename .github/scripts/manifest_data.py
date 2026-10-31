@@ -31,18 +31,16 @@ def resolve_fetch(fetch):
 
 # Path patterns not needed for the pipa build (disk-pressure trims)
 EXCLUDE = [
-    "device/google*",
-    "device/generic/*",
-    "device/sample",
-    "packages/apps/Car*",
+    "device/google/atv",
+    "device/google/contexthub",
+    "device/google/cuttlefish_prebuilts",   # 190M, cuttlefish scripts only
+    "device/google/cuttlefish_vmm",         # 1.7G, crosvm/vmm products only
+    "device/google/trout",
     "packages/modules/desktop*",
     "prebuilts/go/darwin*",             # keep go/linux-x86: microfactory/kati need Go
     "prebuilts/clang/host/darwin*",
-    "prebuilts/devtools*",
-    "prebuilts/ndk*",
-    "prebuilts/gcc/*mingw*",
+    "prebuilts/gcc/darwin*",            # keep mingw: defines libwinpthread, referenced by host variants
     "prebuilts/qemu-kernel*",           # emulator-only
-    "prebuilts/android-emulator*",
     "pdk/*",
     "developers/*",
     "hardware/qcom-caf/sm7*",           # other SoCs' HALs (big)
