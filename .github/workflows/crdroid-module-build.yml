@@ -55,6 +55,19 @@ jobs:
           lunch lineage_pipa-bp4a-userdebug
           set -o pipefail
 
+          # lighter/steadier analysis: no ABI-dump generation, ccache inside the tree
+          export SKIP_ABI_CHECKS=true
+          export CCACHE_DIR="$HOME/romwork/.ccache"
+          mkdir -p "$CCACHE_DIR"
+          ccache -M 5G >/dev/null 2>&1 || true
+
+          # heartbeat: resource curve stays visible in the job log even if the VM dies
+          ( while true; do sleep 30; \
+              echo "[hb $(date -u +%H:%M:%S)] disk=$(df -h / | tail -1 | awk '{print $4}') mem=$(free -m | awk 'NR==2{print $7"MB"}') load=$(cut -d' ' -f1 /proc/loadavg)"; \
+              ps -eo rss,comm --sort=-rss | head -4 | tail -3; \
+            done ) &
+          HB=$!
+
           echo "--- phase 1: soong analysis (needs the full tree) ---"
           df -h / | tail -n 1
           m --skip-ninja CleanRamTile 2>&1 | tee /tmp/analysis.log | tail -n 30
@@ -75,6 +88,7 @@ jobs:
           echo "--- disk/mem after build:"
           df -h / | tail -n 1; free -h | head -n 2
 
+          kill "$HB" 2>/dev/null || true
           APK="$(find out -name 'CleanRamTile.apk' -print | head -n 1)"
           if [ -z "$APK" ]; then echo "APK not found in out/"; exit 1; fi
           cp "$APK" "$GITHUB_WORKSPACE/CleanRamTile.apk"
