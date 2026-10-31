@@ -47,7 +47,7 @@ jobs:
           tail -n 8 /tmp/sync.log
           df -h /
 
-      - name: Build CleanRamTile (two-phase: analyse, free disk, compile)
+      - name: Build CleanRamTile (two-phase analyse then compile)
         id: build
         run: |
           cd "$HOME/romwork"
