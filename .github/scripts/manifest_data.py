@@ -55,7 +55,6 @@ EXCLUDE = [
     "hardware/qcom-caf/sm88*",
     "hardware/qcom-caf/qcm*",
     "hardware/qcom-caf/msm*",
-    "test/*",
 ]
 
 # (path, name, revision) - GitHub-hosted pipa device set, overrides manifest
