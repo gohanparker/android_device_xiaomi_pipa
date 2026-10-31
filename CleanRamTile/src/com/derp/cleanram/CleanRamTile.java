@@ -2,14 +2,33 @@ package com.derp.cleanram;
 
 import android.app.ActivityManager;
 import android.graphics.drawable.Icon;
+import android.os.Handler;
+import android.os.Looper;
 import android.service.quicksettings.Tile;
 import android.service.quicksettings.TileService;
 import android.util.Log;
 import android.widget.Toast;
 
+import java.lang.reflect.Method;
+
 /** QS tile: force-stop background-heavy user apps, same list as the Termux widget. */
 public class CleanRamTile extends TileService {
     private static final String TAG = "CleanRamTile";
+
+    // ActivityManager.forceStopPackage() is @hide; call it reflectively so the app
+    // compiles against the system SDK (no platform framework build needed). The call
+    // is permitted at runtime because the app is platform-signed, privileged and
+    // allowlisted for FORCE_STOP_PACKAGES.
+    private static Method sForceStop;
+
+    private static Method forceStop() throws Exception {
+        Method m = sForceStop;
+        if (m == null) {
+            m = ActivityManager.class.getMethod("forceStopPackage", String.class);
+            sForceStop = m;
+        }
+        return m;
+    }
 
     // Must stay in sync with the on-device clear script. System packages excluded.
     private static final String[] PACKAGES = {
@@ -95,7 +114,7 @@ public class CleanRamTile extends TileService {
             if (am != null) {
                 for (String pkg : PACKAGES) {
                     try {
-                        am.forceStopPackage(pkg);
+                        forceStop().invoke(am, pkg);
                         count++;
                     } catch (Exception e) {
                         Log.w(TAG, "force-stop failed: " + pkg, e);
@@ -103,7 +122,7 @@ public class CleanRamTile extends TileService {
                 }
             }
             final int done = count;
-            getMainHandler().post(() -> {
+            new Handler(Looper.getMainLooper()).post(() -> {
                 Toast.makeText(CleanRamTile.this,
                         "Cleaned " + done + " apps", Toast.LENGTH_SHORT).show();
                 Tile t = getQsTile();
