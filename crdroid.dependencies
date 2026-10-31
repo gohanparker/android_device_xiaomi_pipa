@@ -21,15 +21,5 @@
     "repository": "crdroidandroid/android_kernel_xiaomi_sm8250",
     "target_path": "kernel/xiaomi/sm8250",
     "branch": "16.0-pipa"
-  },
-  {
-    "repository": "PocoF3Releases/vendor_qcom_wfd",
-    "target_path": "vendor/qcom/wfd",
-    "branch": "bka"
-  },
-  {
-    "repository": "PocoF3Releases/device_qcom_wfd",
-    "target_path": "device/qcom/wfd",
-    "branch": "bka"
   }
 ]
