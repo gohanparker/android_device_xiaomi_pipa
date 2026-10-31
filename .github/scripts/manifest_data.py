@@ -43,7 +43,6 @@ EXCLUDE = [
     "prebuilts/gcc/*mingw*",
     "prebuilts/qemu-kernel*",           # emulator-only
     "prebuilts/android-emulator*",
-    "cts",                              # platform CTS: multi-GB, unused by pipa
     "pdk/*",
     "developers/*",
     "hardware/qcom-caf/sm7*",           # other SoCs' HALs (big)
