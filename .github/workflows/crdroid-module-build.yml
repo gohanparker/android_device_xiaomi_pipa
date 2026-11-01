@@ -4,7 +4,9 @@ on:
   workflow_dispatch:
   push:
     branches: ["16.0"]
-    paths: [".github/**"]
+    paths:
+      - ".github/workflows/crdroid-module-build.yml"
+      - ".github/scripts/**"
 
 jobs:
   build:
