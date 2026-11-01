@@ -47,7 +47,7 @@ jobs:
           export ANDROID_HOME="$HOME/android-sdk"
           BT="$ANDROID_HOME/build-tools/36.0.0"
           AJ="$ANDROID_HOME/platforms/android-36/android.jar"
-          SRC="device/xiaomi/pipa/CleanRamTile"
+          SRC="CleanRamTile"          # this repo IS the pipa device tree
           W=/tmp/apk
           rm -rf "$W"; mkdir -p "$W/compiled" "$W/gen" "$W/classes"
 
