@@ -63,6 +63,9 @@ EXCLUDE = [
     "prebuilts/ndk*",
     "prebuilts/qemu-kernel*",
     "prebuilts/android-emulator*",
+    # prebuilt trees unused by an app module (no Make-phase references)
+    "prebuilts/abi-dumps",              # ABI checks disabled via SKIP_ABI_CHECKS
+    "prebuilts/module_sdk",
     # legacy trees
     "pdk/*",
     "developers/*",
