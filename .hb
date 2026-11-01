@@ -1,11 +1,11 @@
-time 01:19:32
+time 01:20:03
 /dev/root       145G  132G   13G  92% /
                total        used        free      shared  buff/cache   available
-Mem:           15983       14593         225          15        1527        1390
-Swap:          10239        9208        1031
+Mem:           15983       14582         212          18        1553        1401
+Swap:          10239        9834         405
   RSS COMMAND
-13227588 soong_build
-102136 provjobd3702152
+13313864 soong_build
+102204 provjobd3702152
 43684 multipathd
-39620 Runner.Listener
-24652 Runner.Worker
+40280 Runner.Listener
+34152 Runner.Worker
