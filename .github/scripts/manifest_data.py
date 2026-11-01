@@ -87,8 +87,8 @@ ADD_BY_BRANCH = {
         ("device/qcom/wfd", "Evolution-X-Devices/device_qcom_wfd", "bka"),
     ],
     "17.0": [
-        # pipa device tree + proprietary blobs: still Android 16 based (port target)
-        ("device/xiaomi/pipa", "gohanparker/android_device_xiaomi_pipa", "16.0"),
+        # pipa device tree: our fork's 17.0 port branch; blobs still Android 16 based
+        ("device/xiaomi/pipa", "gohanparker/android_device_xiaomi_pipa", "17.0"),
         ("vendor/xiaomi/pipa", "crdroidandroid/android_vendor_xiaomi_pipa", "16.0"),
         ("vendor/xiaomi/sm8250-common", "crdroidandroid/proprietary_vendor_xiaomi_sm8250-common", "16.0-pipa"),
         # SoC platform repos are Android 17 ready upstream (lineage-24.0)

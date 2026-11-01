@@ -1,0 +1,84 @@
+name: crdroid17-config-check
+
+# Android 17 (crDroid 17.0) bring-up validation for pipa.
+#
+# Free runners cannot run soong_build (needs >24G RAM), so this checks the
+# memory-light half of the build: kati / product configuration. That is exactly
+# where device-tree porting errors surface (BoardConfigCommon includes, product
+# makefiles, sepolicy mk chains, kernel paths, etc).
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["17.0"]
+
+jobs:
+  config:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - name: Maximize disk + swap
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/share/boost /usr/local/swift
+          sudo docker image prune -af 2>/dev/null || true
+          (sudo fallocate -l 4G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile) || echo "swap already active"
+          df -h / | tail -n 1
+
+      - name: Checkout workflow repo (scripts)
+        uses: actions/checkout@v4
+        with:
+          path: gh-script
+
+      - name: Install build deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bc bison ccache curl flex git git-lfs gnupg gperf rsync squashfs-tools unzip zip libelf-dev libssl-dev libxml2-utils zlib1g-dev libncurses-dev
+          sudo curl -sL -o /usr/local/bin/repo https://storage.googleapis.com/git-repo-downloads/repo
+          sudo chmod a+rx /usr/local/bin/repo
+          git lfs install
+          git config --global user.name "gha"
+          git config --global user.email "gha@users.noreply.github.com"
+
+      - name: Init manifests (17.0)
+        run: |
+          mkdir -p "$HOME/romwork"
+          cd "$HOME/romwork"
+          repo init -u https://github.com/crdroidandroid/android.git -b 17.0 --depth=1 2>&1 | tail -n 2
+
+      - name: Sync 17.0 tree (plain clones)
+        run: |
+          cd "$HOME/romwork"
+          set -o pipefail
+          CRDROID_BRANCH=17.0 python3 "$GITHUB_WORKSPACE/gh-script/.github/scripts/gha_sync.py" --root "$PWD" -j 4 2>&1 | tee /tmp/sync.log | tail -n 8
+          df -h / | tail -n 1
+
+      - name: Product config check (kati/dumpvars, memory-light)
+        run: |
+          cd "$HOME/romwork"
+          set -o pipefail
+          export CCACHE_DIR="$HOME/romwork/.ccache"; mkdir -p "$CCACHE_DIR"
+          source build/envsetup.sh >/dev/null
+          echo "=== lunch lineage_pipa-cp2a-userdebug (validates product + BoardConfig chain) ==="
+          lunch lineage_pipa-cp2a-userdebug 2>&1 | tee /tmp/config.log | tail -n 25
+          echo "=== dump key build vars ==="
+          build/soong/soong_ui.bash --dumpvars-mode \
+            --vars="TARGET_DEVICE TARGET_PRODUCT TARGET_BOARD_PLATFORM TARGET_ARCH TARGET_2ND_ARCH \
+                    TARGET_KERNEL_SOURCE TARGET_KERNEL_CONFIG TARGET_COPY_OUT_VENDOR \
+                    PRODUCT_SOONG_NAMESPACES TARGET_SUPPORTS_64_BIT_APPS" 2>&1 | tee -a /tmp/config.log | head -n 40
+
+      - name: Collect logs (always)
+        if: always()
+        run: |
+          cp /tmp/sync.log "$GITHUB_WORKSPACE/sync.log" 2>/dev/null || true
+          cp /tmp/config.log "$GITHUB_WORKSPACE/config.log" 2>/dev/null || true
+          ls -la "$GITHUB_WORKSPACE" | head -n 12
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: 17-config-logs
+          path: |
+            sync.log
+            config.log
+          if-no-files-found: ignore
