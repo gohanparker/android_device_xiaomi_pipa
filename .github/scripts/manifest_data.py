@@ -49,8 +49,9 @@ EXCLUDE = [
     "device/sample",
     # test infrastructure - only referenced by test modules
     "cts",
-    "test/*",
     "platform_testing",
+    # NOTE: test/* is deliberately KEPT - it carries the csuite soong plugin that
+    # registers the "csuite_test" module type declared in art/ and frameworks/base/
     "packages/apps/Car*",
     "packages/modules/desktop*",
     # host/emulator prebuilts irrelevant to a linux-x86 device build
