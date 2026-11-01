@@ -17,11 +17,18 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import manifest_data as MD  # noqa: E402
 
 
+def _as_text(v):
+    if v is None:
+        return ""
+    return v.decode("utf-8", "replace") if isinstance(v, bytes) else v
+
+
 def run(cmd, cwd=None, env=None, timeout=1800):
     try:
         return subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, env=env, timeout=timeout)
     except subprocess.TimeoutExpired as e:
-        return subprocess.CompletedProcess(cmd, 124, e.stdout or "", e.stderr or "")
+        # TimeoutExpired carries bytes even with text=True - normalise it
+        return subprocess.CompletedProcess(cmd, 124, _as_text(e.stdout), _as_text(e.stderr))
 
 
 def clone_one(entry, root, attempts=3):
@@ -33,7 +40,7 @@ def clone_one(entry, root, attempts=3):
         if attempt > 1:
             # back off harder on server-side throttling (googlesource 429s
             # surface as "expected flush after ref listing")
-            throttled = any(("429" in x or "flush" in x) for x in out)
+            throttled = any(("429" in _as_text(x) or "flush" in _as_text(x)) for x in out)
             delay = 45 * (attempt - 1) if throttled else 8 * (attempt - 1)
             print(f"  retry {attempt}/{attempts} in {delay}s: {path}", flush=True)
             time.sleep(delay)

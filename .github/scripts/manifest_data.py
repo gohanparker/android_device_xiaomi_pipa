@@ -71,17 +71,39 @@ EXCLUDE = [
     "developers/*",
 ]
 
-# (path, name, revision) - GitHub-hosted pipa device set, overrides manifest
-ADD = [
-    ("device/xiaomi/pipa", "gohanparker/android_device_xiaomi_pipa", "16.0"),
-    ("device/xiaomi/sm8250-common", "crdroidandroid/android_device_xiaomi_sm8250-common", "16.0-pipa"),
-    ("vendor/xiaomi/pipa", "crdroidandroid/android_vendor_xiaomi_pipa", "16.0"),
-    ("vendor/xiaomi/sm8250-common", "crdroidandroid/proprietary_vendor_xiaomi_sm8250-common", "16.0-pipa"),
-    ("kernel/xiaomi/sm8250", "crdroidandroid/android_kernel_xiaomi_sm8250", "16.0-pipa"),
-    ("hardware/xiaomi", "gohanparker/android_hardware_xiaomi", "16.0"),
-    ("vendor/qcom/wfd", "Evolution-X-Devices/vendor_qcom_wfd", "bka"),
-    ("device/qcom/wfd", "Evolution-X-Devices/device_qcom_wfd", "bka"),
-]
+# Pipa device set per platform branch: (path, name, revision).
+#   16.0 = current working set (crDroid 16 / Android 16, verified building)
+#   17.0 = Android 17 bring-up. Only the SoC platform repos are 17-ready upstream;
+#          the pipa device tree and blobs are still 16.0-based (port in progress).
+ADD_BY_BRANCH = {
+    "16.0": [
+        ("device/xiaomi/pipa", "gohanparker/android_device_xiaomi_pipa", "16.0"),
+        ("device/xiaomi/sm8250-common", "crdroidandroid/android_device_xiaomi_sm8250-common", "16.0-pipa"),
+        ("vendor/xiaomi/pipa", "crdroidandroid/android_vendor_xiaomi_pipa", "16.0"),
+        ("vendor/xiaomi/sm8250-common", "crdroidandroid/proprietary_vendor_xiaomi_sm8250-common", "16.0-pipa"),
+        ("kernel/xiaomi/sm8250", "crdroidandroid/android_kernel_xiaomi_sm8250", "16.0-pipa"),
+        ("hardware/xiaomi", "gohanparker/android_hardware_xiaomi", "16.0"),
+        ("vendor/qcom/wfd", "Evolution-X-Devices/vendor_qcom_wfd", "bka"),
+        ("device/qcom/wfd", "Evolution-X-Devices/device_qcom_wfd", "bka"),
+    ],
+    "17.0": [
+        # pipa device tree + proprietary blobs: still Android 16 based (port target)
+        ("device/xiaomi/pipa", "gohanparker/android_device_xiaomi_pipa", "16.0"),
+        ("vendor/xiaomi/pipa", "crdroidandroid/android_vendor_xiaomi_pipa", "16.0"),
+        ("vendor/xiaomi/sm8250-common", "crdroidandroid/proprietary_vendor_xiaomi_sm8250-common", "16.0-pipa"),
+        # SoC platform repos are Android 17 ready upstream (lineage-24.0)
+        ("device/xiaomi/sm8250-common", "LineageOS/android_device_xiaomi_sm8250-common", "lineage-24.0"),
+        ("kernel/xiaomi/sm8250", "LineageOS/android_kernel_xiaomi_sm8250", "lineage-24.0"),
+        ("hardware/xiaomi", "LineageOS/android_hardware_xiaomi", "lineage-24.0"),
+        # wfd pair: no Android 17 branch exists anywhere, keep last good
+        ("vendor/qcom/wfd", "Evolution-X-Devices/vendor_qcom_wfd", "bka"),
+        ("device/qcom/wfd", "Evolution-X-Devices/device_qcom_wfd", "bka"),
+    ],
+}
+
+# Platform branch selection: CI sets CRDROID_BRANCH, local default keeps 16.0
+BRANCH = os.environ.get("CRDROID_BRANCH", "16.0")
+ADD = ADD_BY_BRANCH.get(BRANCH, ADD_BY_BRANCH["16.0"])
 
 
 def resolve_includes(start, mdir):
