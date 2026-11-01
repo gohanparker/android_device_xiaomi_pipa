@@ -62,7 +62,10 @@ jobs:
 
           echo "--- javac"
           mapfile -t JAVAS < <(find "$SRC/src" "$W/gen" -name '*.java')
-          javac -source 8 -target 8 -nowarn -bootclasspath "$AJ" -classpath "$AJ" \
+          # NB: android.jar goes on the classpath, NOT -bootclasspath, otherwise
+          # javac cannot expand lambdas (LambdaMetafactory is absent from android.jar).
+          # d8 desugars the lambdas for the device.
+          javac -source 8 -target 8 -nowarn -classpath "$AJ" \
             -d "$W/classes" "${JAVAS[@]}"
 
           echo "--- d8 (dex + lambda desugaring)"
