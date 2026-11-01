@@ -75,9 +75,9 @@ EXCLUDE = [
 # These are soong/ninja inputs only - kati never reads them - and they cost ~27G,
 # which is what pushed the Android 17 sync into ENOSPC on the runner.
 LEAN_EXCLUDE = [
-    "prebuilts/clang",              # host compilers (20G), IDE tooling refs only
-    "prebuilts/sdk",                # SDK packaging tools only (6.8G)
-    "prebuilts/rust",               # rust toolchain
+    "prebuilts/clang*",             # host compilers (20G), IDE tooling refs only
+    "prebuilts/sdk*",               # SDK packaging tools only (6.8G)
+    "prebuilts/rust*",              # rust toolchain
 ]
 
 # Pipa device set per platform branch: (path, name, revision).
