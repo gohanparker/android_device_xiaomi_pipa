@@ -71,6 +71,15 @@ EXCLUDE = [
     "developers/*",
 ]
 
+# Extra exclusions for kati/product-config validation runs (LEAN_CONFIG_CHECK=1).
+# These are soong/ninja inputs only - kati never reads them - and they cost ~27G,
+# which is what pushed the Android 17 sync into ENOSPC on the runner.
+LEAN_EXCLUDE = [
+    "prebuilts/clang",              # host compilers (20G), IDE tooling refs only
+    "prebuilts/sdk",                # SDK packaging tools only (6.8G)
+    "prebuilts/rust",               # rust toolchain
+]
+
 # Pipa device set per platform branch: (path, name, revision).
 #   16.0 = current working set (crDroid 16 / Android 16, verified building)
 #   17.0 = Android 17 bring-up. Only the SoC platform repos are 17-ready upstream;
@@ -208,13 +217,16 @@ def collect(base):
     data = parse_merged(base)
     add_by_path = {path: (name, rev) for path, name, rev in ADD}
     add_names = {name for _, name, _ in ADD}
+    exclude = list(EXCLUDE)
+    if os.environ.get("LEAN_CONFIG_CHECK") == "1":
+        exclude += LEAN_EXCLUDE
 
     out = {}
     for p in data["projects"]:
         name, path = p["name"], p["path"]
         if not name or path in add_by_path or name in add_names:
             continue
-        if any(fnmatch.fnmatch(path, pat) for pat in EXCLUDE):
+        if any(fnmatch.fnmatch(path, pat) for pat in exclude):
             continue
         url = repo_url(data["remotes"], data["default_fetch"], name, p["remote"])
         rev, kind = normalize_rev(p["revision"])
