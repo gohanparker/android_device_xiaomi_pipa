@@ -56,6 +56,25 @@ jobs:
           # kernel's warnings-as-errors relaxed. Our ported code is still fully
           # compiled - only warning severity changes.
           export KCFLAGS="-fcommon -Wno-error"
+          echo "=== prepare (generated headers/host tools) ==="
+          make O="$OUT" ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- prepare 2>&1 | tail -n 5
+          echo "=== compile ONLY the ported pipa objects (fast port feedback) ==="
+          make O="$OUT" ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j"$(nproc)" \
+            drivers/power/supply/maxim_pipa/onewire_gpio_master.o \
+            drivers/power/supply/maxim_pipa/onewire_gpio_slave.o \
+            drivers/power/supply/maxim_pipa/ds28e16_master.o \
+            drivers/power/supply/maxim_pipa/ds28e16_slave.o \
+            drivers/power/supply/maxim_pipa/ucl_sha3.o \
+            drivers/power/supply/maxim_pipa/sha384_software.o \
+            drivers/power/supply/qcom/qpnp-smb5-pipa.o \
+            drivers/power/supply/qcom/smb5-lib-pipa.o \
+            drivers/power/supply/qcom/step-chg-jeita-pipa.o \
+            drivers/power/supply/qcom/qpnp-fg-gen4-pipa.o \
+            drivers/power/supply/ti/pd_policy_manager_pipa.o \
+            drivers/power/supply/ti/cp_qc30_pipa.o \
+            drivers/power/supply/ti/bq2597x_charger_pipa.o \
+            2>&1 | tee /tmp/kpipa.log | tail -n 25
+          echo "ported objects built: $(ls $OUT/drivers/power/supply/maxim_pipa/*.o $OUT/drivers/power/supply/qcom/*pipa.o $OUT/drivers/power/supply/ti/*pipa.o 2>/dev/null | wc -l)"
           echo "=== dtbs (validates the ported pipa DTS + dtbo Makefile hook) ==="
           make O="$OUT" ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j"$(nproc)" dtbs 2>&1 | tee /tmp/kbuild.log | tail -n 15
           ls -la "$OUT/arch/arm64/boot/dts/vendor/qcom/" | grep -i pipa || echo "!! no pipa dtbo produced"
