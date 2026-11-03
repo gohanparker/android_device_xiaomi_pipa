@@ -17,6 +17,7 @@ TARGET_SCREEN_DENSITY := 400
 
 # Kernel
 TARGET_KERNEL_CONFIG += vendor/xiaomi/pipa.config
+TARGET_KERNEL_CONFIG += vendor/xiaomi/pipa-perf.config
 
 # Properties
 TARGET_SYSTEM_PROP += $(DEVICE_PATH)/system.prop

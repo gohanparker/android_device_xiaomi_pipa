@@ -41,3 +41,14 @@ service cleanram_boot /system/bin/cleanram_boot.sh
     group system
     oneshot
     disabled
+
+# Performance profile: runtime sysfs tuning (needs root for boost/module knobs)
+on property:sys.boot_completed=1
+    start pipa_perf
+
+service pipa_perf /system/bin/pipa_perf.sh
+    class main
+    user root
+    group root system
+    oneshot
+    disabled

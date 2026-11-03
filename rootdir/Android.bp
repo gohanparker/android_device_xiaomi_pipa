@@ -18,3 +18,10 @@ sh_binary {
     src: "etc/cleanram_boot.sh",
     filename: "cleanram_boot.sh",
 }
+
+// Performance profile (runtime sysfs tuning; thermal mitigation untouched)
+sh_binary {
+    name: "pipa_perf",
+    src: "etc/pipa_perf.sh",
+    filename: "pipa_perf.sh",
+}

@@ -61,7 +61,8 @@ PRODUCT_COPY_FILES += \
 # Rootdir
 PRODUCT_PACKAGES += \
     init.device.rc \
-    cleanram_boot
+    cleanram_boot \
+    pipa_perf
 
 # Shipping API level
 PRODUCT_SHIPPING_API_LEVEL := 30

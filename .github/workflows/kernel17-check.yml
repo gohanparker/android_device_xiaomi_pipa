@@ -47,11 +47,14 @@ jobs:
             "$KB/vendor/kona-perf_defconfig" \
             "$KB/vendor/debugfs.config" \
             "$KB/vendor/xiaomi/sm8250-common.config" \
-            "$KB/vendor/xiaomi/pipa.config" 2>&1 | tee /tmp/kcfg.log | tail -n 12
+            "$KB/vendor/xiaomi/pipa.config" \
+            "$KB/vendor/xiaomi/pipa-perf.config" 2>&1 | tee /tmp/kcfg.log | tail -n 12
           echo "=== olddefconfig ==="
           make O="$OUT" ARCH=arm64 olddefconfig 2>&1 | tail -n 5
           echo "=== pipa/platform config sanity ==="
           grep -E "CONFIG_MACH_XIAOMI_PIPA|CONFIG_QPNP_SMB5_PIPA|CONFIG_QPNP_FG_GEN4_PIPA|CONFIG_BQ2597X_CHARGE_PUMP_PIPA|CONFIG_ONEWIRE_GPIO_PIPA|CONFIG_BATT_VERIFY_BY_DS28E16_PIPA|CONFIG_ARCH_KONA=|CONFIG_BUILD_ARM64_DT_OVERLAY|CONFIG_COMPAT=" "$OUT/.config"
+          echo "--- performance profile in effect:"
+          grep -E "CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE=|CONFIG_CC_OPTIMIZE_FOR_SIZE=|CONFIG_INIT_ON_ALLOC|CONFIG_INIT_ON_FREE|CONFIG_DEFAULT_IOSCHED=|CONFIG_MQ_IOSCHED_KYBER=|CONFIG_ARM64_USE_LSE_ATOMICS=|CONFIG_CPU_BOOST=|CONFIG_MSM_PERFORMANCE=|CONFIG_SCHED_WALT=|CONFIG_PREEMPT=" "$OUT/.config"
           # Linux 4.19 vs modern GCC: needs -fcommon (GCC>=10 default) and the
           # kernel's warnings-as-errors relaxed. Our ported code is still fully
           # compiled - only warning severity changes.
