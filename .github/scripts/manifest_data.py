@@ -102,7 +102,8 @@ ADD_BY_BRANCH = {
         ("vendor/xiaomi/sm8250-common", "crdroidandroid/proprietary_vendor_xiaomi_sm8250-common", "16.0-pipa"),
         # SoC platform repos are Android 17 ready upstream (lineage-24.0)
         ("device/xiaomi/sm8250-common", "LineageOS/android_device_xiaomi_sm8250-common", "lineage-24.0"),
-        ("kernel/xiaomi/sm8250", "LineageOS/android_kernel_xiaomi_sm8250", "lineage-24.0"),
+        # our fork: lineage-24.0 + pipa support ported from the 16.0-pipa kernel
+        ("kernel/xiaomi/sm8250", "gohanparker/android_kernel_xiaomi_sm8250", "17.0-pipa"),
         ("hardware/xiaomi", "LineageOS/android_hardware_xiaomi", "lineage-24.0"),
         # wfd pair: no Android 17 branch exists anywhere, keep last good
         ("vendor/qcom/wfd", "Evolution-X-Devices/vendor_qcom_wfd", "bka"),

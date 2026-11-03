@@ -1,0 +1,67 @@
+name: kernel17-check
+
+# Validates the Android 17 (lineage-24.0) pipa kernel port:
+#   base = vendor/xiaomi/sm8250-common.config  (lineage-24.0 sm8250-common)
+#   frag = vendor/xiaomi/pipa.config           (ported from the 16.0-pipa kernel)
+# Kernel builds are memory-light, so unlike a full ROM build this runs on a
+# free runner. Catches: driver API drift, dts errors, Kconfig/Makefile hooks.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["17.0"]
+    paths:
+      - ".github/workflows/kernel17-check.yml"
+
+jobs:
+  kernel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install toolchain + kernel deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bc bison flex libssl-dev libelf-dev make cpio kmod rsync git \
+            gcc gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu
+          aarch64-linux-gnu-gcc --version | head -n 1
+
+      - name: Clone pipa kernel (17.0-pipa)
+        run: |
+          git clone --depth=1 -q -b 17.0-pipa https://github.com/gohanparker/android_kernel_xiaomi_sm8250 kernel
+          echo "pipa files: $(find kernel -iname '*pipa*' | wc -l)"
+
+      - name: Merge configs + build Image/dtb
+        run: |
+          set -o pipefail
+          cd kernel
+          OUT=/tmp/kout; mkdir -p "$OUT"
+          export ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu-
+          echo "=== merge base + pipa fragment ==="
+          scripts/kconfig/merge_config.sh -m -O "$OUT" \
+            arch/arm64/configs/vendor/xiaomi/sm8250-common.config \
+            arch/arm64/configs/vendor/xiaomi/pipa.config 2>&1 | tee /tmp/kcfg.log | tail -n 12
+          echo "=== olddefconfig ==="
+          make O="$OUT" ARCH=arm64 olddefconfig 2>&1 | tail -n 5
+          grep -cE "CONFIG_ARCH_QCOM|CONFIG_MACH_XIAOMI" "$OUT/.config" || true
+          echo "=== build Image + dtbs ==="
+          make O="$OUT" ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j"$(nproc)" Image dtbs 2>&1 | tee /tmp/kbuild.log | tail -n 30
+          ls -la "$OUT/arch/arm64/boot/Image"
+
+      - name: Collect logs (always)
+        if: always()
+        run: |
+          cp /tmp/kcfg.log "$GITHUB_WORKSPACE/kcfg.log" 2>/dev/null || true
+          cp /tmp/kbuild.log "$GITHUB_WORKSPACE/kbuild.log" 2>/dev/null || true
+          ls -la "$GITHUB_WORKSPACE" | head -n 12
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kernel17-logs
+          path: |
+            kcfg.log
+            kbuild.log
+          if-no-files-found: ignore
