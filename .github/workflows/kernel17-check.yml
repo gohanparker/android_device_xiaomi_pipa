@@ -38,13 +38,20 @@ jobs:
           cd kernel
           OUT=/tmp/kout; mkdir -p "$OUT"
           export ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu-
-          echo "=== merge base + pipa fragment ==="
+          # Full config chain exactly as the ROM builds it:
+          #   base = vendor/kona-perf_defconfig (from sm8250-common BoardConfigCommon.mk)
+          #   + debugfs, sm8250-common, pipa fragments
+          KB=arch/arm64/configs
+          echo "=== merge base + fragments ==="
           scripts/kconfig/merge_config.sh -m -O "$OUT" \
-            arch/arm64/configs/vendor/xiaomi/sm8250-common.config \
-            arch/arm64/configs/vendor/xiaomi/pipa.config 2>&1 | tee /tmp/kcfg.log | tail -n 12
+            "$KB/vendor/kona-perf_defconfig" \
+            "$KB/vendor/debugfs.config" \
+            "$KB/vendor/xiaomi/sm8250-common.config" \
+            "$KB/vendor/xiaomi/pipa.config" 2>&1 | tee /tmp/kcfg.log | tail -n 12
           echo "=== olddefconfig ==="
           make O="$OUT" ARCH=arm64 olddefconfig 2>&1 | tail -n 5
-          grep -cE "CONFIG_ARCH_QCOM|CONFIG_MACH_XIAOMI" "$OUT/.config" || true
+          echo "=== pipa/platform config sanity ==="
+          grep -E "CONFIG_MACH_XIAOMI_PIPA|CONFIG_QPNP_SMB5_PIPA|CONFIG_QPNP_FG_GEN4_PIPA|CONFIG_BQ2597X_CHARGE_PUMP_PIPA|CONFIG_ONEWIRE_GPIO_PIPA|CONFIG_BATT_VERIFY_BY_DS28E16_PIPA|CONFIG_ARCH_KONA=|CONFIG_BUILD_ARM64_DT_OVERLAY|CONFIG_COMPAT=" "$OUT/.config"
           # Linux 4.19 vs modern GCC: needs -fcommon (GCC>=10 default) and the
           # kernel's warnings-as-errors relaxed. Our ported code is still fully
           # compiled - only warning severity changes.
