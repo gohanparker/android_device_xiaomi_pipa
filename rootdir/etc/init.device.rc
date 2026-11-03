@@ -42,8 +42,13 @@ service cleanram_boot /system/bin/cleanram_boot.sh
     oneshot
     disabled
 
-# Performance profile: runtime sysfs tuning (needs root for boost/module knobs)
+# Performance profile: runtime sysfs tuning (needs root for boost/module knobs).
+# Also re-applies live whenever the profile prop changes:
+#   setprop persist.pipa.perf.mode balanced|aggressive|max
 on property:sys.boot_completed=1
+    start pipa_perf
+
+on property:persist.pipa.perf.mode=*
     start pipa_perf
 
 service pipa_perf /system/bin/pipa_perf.sh
