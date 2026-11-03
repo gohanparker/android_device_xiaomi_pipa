@@ -45,9 +45,18 @@ jobs:
           echo "=== olddefconfig ==="
           make O="$OUT" ARCH=arm64 olddefconfig 2>&1 | tail -n 5
           grep -cE "CONFIG_ARCH_QCOM|CONFIG_MACH_XIAOMI" "$OUT/.config" || true
-          echo "=== build Image + dtbs ==="
-          make O="$OUT" ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j"$(nproc)" Image dtbs 2>&1 | tee /tmp/kbuild.log | tail -n 30
+          # Linux 4.19 vs modern GCC: needs -fcommon (GCC>=10 default) and the
+          # kernel's warnings-as-errors relaxed. Our ported code is still fully
+          # compiled - only warning severity changes.
+          export KCFLAGS="-fcommon -Wno-error"
+          echo "=== dtbs (validates the ported pipa DTS + dtbo Makefile hook) ==="
+          make O="$OUT" ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j"$(nproc)" dtbs 2>&1 | tee /tmp/kbuild.log | tail -n 15
+          ls -la "$OUT/arch/arm64/boot/dts/vendor/qcom/" | grep -i pipa || echo "!! no pipa dtbo produced"
+          echo "=== Image (validates the ported drivers compile) ==="
+          make O="$OUT" ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j"$(nproc)" Image 2>&1 | tee -a /tmp/kbuild.log | tail -n 25
           ls -la "$OUT/arch/arm64/boot/Image"
+          echo "=== did our ported objects compile? ==="
+          grep -cE "qpnp-smb5-pipa|smb5-lib-pipa|pd_policy_manager_pipa|bq2597x_charger_pipa|maxim_pipa|qpnp-fg-gen4-pipa|step-chg-jeita-pipa|cp_qc30_pipa" /tmp/kbuild.log
 
       - name: Collect logs (always)
         if: always()
