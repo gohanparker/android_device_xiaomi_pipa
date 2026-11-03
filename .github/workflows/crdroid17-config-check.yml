@@ -60,11 +60,12 @@ jobs:
           source build/envsetup.sh >/dev/null
           echo "=== lunch lineage_pipa-cp2a-userdebug (validates product + BoardConfig chain) ==="
           lunch lineage_pipa-cp2a-userdebug 2>&1 | tee /tmp/config.log | tail -n 25
-          echo "=== dump key build vars ==="
-          build/soong/soong_ui.bash --dumpvars-mode \
-            --vars="TARGET_DEVICE TARGET_PRODUCT TARGET_BOARD_PLATFORM TARGET_ARCH TARGET_2ND_ARCH \
-                    TARGET_KERNEL_SOURCE TARGET_KERNEL_CONFIG TARGET_COPY_OUT_VENDOR \
-                    PRODUCT_SOONG_NAMESPACES TARGET_SUPPORTS_64_BIT_APPS" 2>&1 | tee -a /tmp/config.log | head -n 40
+          echo "=== key build vars (get_build_var inherits the lunch environment) ==="
+          for v in TARGET_DEVICE TARGET_PRODUCT TARGET_BOARD_PLATFORM TARGET_ARCH \
+                   TARGET_KERNEL_SOURCE TARGET_KERNEL_CONFIG TARGET_COPY_OUT_VENDOR \
+                   PRODUCT_SOONG_NAMESPACES TARGET_SUPPORTS_64_BIT_APPS; do
+            printf "%s=%s\n" "$v" "$(get_build_var $v 2>/dev/null)"
+          done 2>&1 | tee -a /tmp/config.log
 
       - name: Collect logs (always)
         if: always()
