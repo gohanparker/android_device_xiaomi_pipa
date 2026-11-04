@@ -221,6 +221,8 @@ def collect(base):
     exclude = list(EXCLUDE)
     if os.environ.get("LEAN_CONFIG_CHECK") == "1":
         exclude += LEAN_EXCLUDE
+    if os.environ.get("ROM_BUILD") == "1":
+        exclude = []        # full ROM builds run on big machines: sync everything
 
     out = {}
     for p in data["projects"]:

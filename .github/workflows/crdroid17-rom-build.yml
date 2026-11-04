@@ -1,0 +1,71 @@
+name: crdroid17-rom-build
+
+# Full crDroid 17.0 (Android 17) ROM build for pipa.
+#
+# Requires a BIG runner: >= 32 GB RAM and >= 300 GB free disk (a free
+# GitHub-hosted runner cannot do this - soong analysis alone needs >24 GB).
+#
+# Register a self-hosted runner on a large machine (cloud VM / Crave devspace /
+# spare box), then dispatch this workflow. The machine needs: git, python3,
+# repo, curl, and the usual AOSP build deps (bc bison flex libssl-dev libelf-dev
+# zip unzip rsync gperf libxml2-utils ccache).
+
+on:
+  workflow_dispatch:
+
+jobs:
+  rom:
+    runs-on: [self-hosted, linux, x64]
+    timeout-minutes: 720
+    steps:
+      - name: Preflight
+        run: |
+          echo "RAM:  $(free -g | awk 'NR==2{print $2\" GB total, \"$7\" GB available\"}')"
+          echo "disk: $(df -h "$HOME" | tail -1 | awk '{print $4\" free\"}')"
+          echo "cpus: $(nproc)"
+          command -v repo >/dev/null && repo --version | head -n 1 || echo "!! repo not installed"
+
+      - name: Checkout scripts
+        uses: actions/checkout@v4
+        with:
+          path: gh-script
+          ref: 17.0
+
+      - name: Sync 17.0 tree (full)
+        run: |
+          mkdir -p "$HOME/rom17"
+          cd "$HOME/rom17"
+          [ -f .repo/manifest.xml ] || repo init -u https://github.com/crdroidandroid/android.git -b 17.0 --depth=1
+          ROM_BUILD=1 CRDROID_BRANCH=17.0 python3 "$GITHUB_WORKSPACE/gh-script/.github/scripts/gha_sync.py" --root "$PWD" -j "$(nproc)" 2>&1 | tee /tmp/sync.log | tail -n 10
+          df -h "$HOME" | tail -1
+
+      - name: Build ROM (bacon)
+        run: |
+          cd "$HOME/rom17"
+          set -o pipefail
+          export ALLOW_MISSING_DEPENDENCIES=true
+          export SKIP_ABI_CHECKS=true
+          export CCACHE_DIR="$HOME/rom17/.ccache"; mkdir -p "$CCACHE_DIR"
+          source build/envsetup.sh >/dev/null
+          lunch lineage_pipa-cp2a-userdebug
+          m -j"$(nproc)" bacon 2>&1 | tee /tmp/rom.log | tail -n 40
+          ls -la out/target/product/pipa/*.zip
+
+      - name: Collect outputs (always)
+        if: always()
+        run: |
+          cp /tmp/sync.log "$GITHUB_WORKSPACE/sync.log" 2>/dev/null || true
+          cp /tmp/rom.log "$GITHUB_WORKSPACE/rom.log" 2>/dev/null || true
+          cp "$HOME"/rom17/out/target/product/pipa/*.zip "$GITHUB_WORKSPACE/" 2>/dev/null || true
+          ls -la "$GITHUB_WORKSPACE" | head -n 12
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pipa-crdroid17-rom
+          path: |
+            *.zip
+            rom.log
+            sync.log
+          if-no-files-found: ignore
